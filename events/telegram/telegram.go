@@ -26,6 +26,19 @@ func New(client *telegram.Client, storage storage.Storage) *Processor {
 	}
 }
 
+func (p Processor) Fetch(limit int) ([]events.Event, error) {
+	update, err := p.tg.Updates(p.offset, limit)
+	if err != nil {
+		return nil, e.Wrap("can't get events", err)
+	}
+
+	res := make([]events.Event, 0, len(update))
+
+	for _, u := range update {
+		res = append(res, event(u))
+	}
+}
+
 // last updated Fetch
 func (p Processor) Fetch(limit int) ([]events.Event, error) {
 	updates, err := p.tg.Updates(p.offset, limit)
