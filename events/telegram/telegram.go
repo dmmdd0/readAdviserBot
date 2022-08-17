@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"errors"
 	"readAdviserBot/clients/telegram"
 	"readAdviserBot/events"
 	"readAdviserBot/lib/e"
@@ -19,6 +20,9 @@ type Meta struct {
 	Username string
 }
 
+var ErrUnknounType = errors.New("unknown event type")
+var ErrUnknounMetaType = errors.New("uhknown meta typw")
+
 func New(client *telegram.Client, storage storage.Storage) *Processor {
 	return &Processor{
 		tg:      client,
@@ -26,18 +30,18 @@ func New(client *telegram.Client, storage storage.Storage) *Processor {
 	}
 }
 
-func (p Processor) Fetch(limit int) ([]events.Event, error) {
-	update, err := p.tg.Updates(p.offset, limit)
-	if err != nil {
-		return nil, e.Wrap("can't get events", err)
-	}
-
-	res := make([]events.Event, 0, len(update))
-
-	for _, u := range update {
-		res = append(res, event(u))
-	}
-}
+//func (p Processor) Fetch(limit int) ([]events.Event, error) {
+//	update, err := p.tg.Updates(p.offset, limit)
+//	if err != nil {
+//		return nil, e.Wrap("can't get events", err)
+//	}
+//
+//	res := make([]events.Event, 0, len(update))
+//
+//	for _, u := range update {
+//		res = append(res, event(u))
+//	}
+//}
 
 // last updated Fetch
 func (p Processor) Fetch(limit int) ([]events.Event, error) {
@@ -57,6 +61,33 @@ func (p Processor) Fetch(limit int) ([]events.Event, error) {
 
 	p.offset = updates[len(updates)-1].ID + 1
 
+	return res, nil
+}
+
+func (p *Processor) Process(event events.Event) error {
+	switch event.Type {
+	case events.Message:
+		p.processMesage(event)
+	default:
+		return e.Wrap("can't proccess message", ErrUnknounType)
+	}
+}
+
+func (p *Processor) processMesage(event events.Event) error {
+	meta, err := meta(event)
+
+	if err != nil {
+		return e.Wrap("can't process message", err)
+	}
+
+	//return nil
+}
+
+func meta(event events.Event) (Meta, error) {
+	res, ok := event.Meta.(Meta)
+	if !ok {
+		return Meta{}, e.Wrap("can't get meta", ErrUnknounMetaType)
+	}
 	return res, nil
 }
 
