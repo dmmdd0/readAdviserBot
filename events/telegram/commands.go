@@ -3,6 +3,8 @@ package telegram
 import (
 	"log"
 	"net/url"
+	"readAdviserBot/lib/e"
+	"readAdviserBot/storage"
 	"strings"
 )
 
@@ -35,8 +37,20 @@ func (p *Processor) doCmd(text string, chatID int, username string) error {
 
 //todo: lesson #5 15:30
 //	https://www.youtube.com/watch?v=f_esRaDae44&list=PLFAQFisfyqlWDwouVTUztKX2wUjYQ4T3l&index=5
-func (receiver Meta) savePage() {
+func (p *Processor) savePage(chatID int, pageURL string, username string) (err error) {
+	defer func() { err = e.WrapIfErr("can't do command: save page", err) }()
 
+	page := &storage.Page{
+		URL:      pageURL,
+		UserName: username,
+	}
+	isExists, err := p.storage.IsExists(page)
+	if err != nil {
+		retutn err
+	}
+	if isExists{
+		return p.tg.SendMessage(chatID,"")
+	}
 }
 
 func isAddCmd(text string) bool {
