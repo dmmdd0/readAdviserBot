@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"errors"
 	"log"
 	"net/url"
 	"readAdviserBot/lib/e"
@@ -44,13 +45,42 @@ func (p *Processor) savePage(chatID int, pageURL string, username string) (err e
 		URL:      pageURL,
 		UserName: username,
 	}
+
 	isExists, err := p.storage.IsExists(page)
 	if err != nil {
-		retutn err
+		return err
 	}
-	if isExists{
-		return p.tg.SendMessage(chatID,"")
+
+	if isExists {
+		return p.tg.SendMessage(chatID, msgAlreayExist)
 	}
+
+	if err := p.storage.Save(page); err != nil {
+		return err
+	}
+
+	// todo: closure variant lesson #5 20:00
+	if err := p.tg.SendMessage(chatID, msgSaved); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p Processor) SendRandom(chatID int, username string) (err error) {
+	defer func() { err = e.WrapIfErr("can't do command: can't sens random", err) }()
+
+	page, err := p.storage.PickRandom(username)
+	//files not best plase for ErrNoSavePage because it is TG dipendent
+	//if err != nil && !errors.Is(err, files.ErrNoSavedPage) {
+	if err != nil && !errors.Is(err, storage.ErrNoSavedPage) {
+		return err
+	}
+
+	if errors.Is(err, storage.ErrNoSavedPage) {
+		return p.tg.SendMessage(chatID, msgNoSavedPage)
+	}
+
 }
 
 func isAddCmd(text string) bool {
