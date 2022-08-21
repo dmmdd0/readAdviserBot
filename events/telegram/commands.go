@@ -22,7 +22,7 @@ func (p *Processor) doCmd(text string, chatID int, username string) error {
 
 	//	add page: http://
 	if isAddCmd(text) {
-		//	TODO: AddPage()
+		return p.savePage(chatID, text, username)
 	}
 
 	//	rnd page: /rnd
@@ -30,9 +30,13 @@ func (p *Processor) doCmd(text string, chatID int, username string) error {
 	//	start: /start: hi + help
 	switch text {
 	case RndCmd:
+		return p.sendRandom(chatID, username)
 	case HelpCmd:
+		return p.sendHelp(chatID)
 	case StartCmd:
-
+		return p.sendHelp(chatID)
+	default:
+		return p.tg.SendMessage(chatID, msgUnlKnounCommand)
 	}
 }
 
@@ -67,7 +71,7 @@ func (p *Processor) savePage(chatID int, pageURL string, username string) (err e
 	return nil
 }
 
-func (p Processor) SendRandom(chatID int, username string) (err error) {
+func (p Processor) sendRandom(chatID int, username string) (err error) {
 	defer func() { err = e.WrapIfErr("can't do command: can't sens random", err) }()
 
 	page, err := p.storage.PickRandom(username)
@@ -81,6 +85,19 @@ func (p Processor) SendRandom(chatID int, username string) (err error) {
 		return p.tg.SendMessage(chatID, msgNoSavedPage)
 	}
 
+	if err := p.tg.SendMessage(chatID, page.URL); err != nil {
+		return err
+	}
+
+	return p.storage.Remove(page)
+}
+
+func (p Processor) sendHelp(chatID int) error {
+	return p.tg.SendMessage(chatID, msgHelp)
+}
+
+func (p Processor) SendHelo(chatID int) error {
+	return p.tg.SendMessage(chatID, msgHello)
 }
 
 func isAddCmd(text string) bool {
