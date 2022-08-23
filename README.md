@@ -3,6 +3,7 @@
 Повторяю это
 
 Видео https://youtu.be/PnOrFYtZJUI
+
 Ссылка на итоговый проект на гитхабе: https://github.com/GolangLessons/Read-Adviser-Bot/tree/lessons
 Николай Тузов (с)
 
